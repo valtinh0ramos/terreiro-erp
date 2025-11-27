@@ -1,0 +1,649 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ENUMS
+ */
+
+enum Role {
+  DIRECAO
+  SECRETARIA
+  FINANCEIRO
+  COORDENACAO_ESTUDOS
+  BIBLIOTECA
+  ESTOQUE_CANTINA
+  MEDIUM_LIMITADO
+}
+
+enum NivelAcesso {
+  COMUM
+  AVANCADO
+  SUPERUSER
+}
+
+enum MediumNivel {
+  NIVEL_1_INICIANTE
+  NIVEL_2_DESENVOLVIMENTO
+  NIVEL_3_TRABALHO_SEM_CONSULTA
+  NIVEL_4_TRABALHO_COMPLETO
+  NIVEL_5_LIDER_SESSAO
+  NIVEL_6_PAI_MAE_PEQUENA
+  NIVEL_7_DIRIGENTE_INTERNO
+  NIVEL_8_DIRIGENTE_GERAL
+}
+
+enum LinhaTrabalhoGuia {
+  CABOCLO
+  PRETO_VELHO
+  BAIANO
+  BOIADEIRO
+  MARINHEIRO
+  IBEJI
+  CIGANO
+  EXU
+  POMBAGIRA
+  MALANDRO
+  EXU_MIRIM
+  MEDICO
+  MESTRE_ORIENTE
+}
+
+enum MediumStatus {
+  ATIVO
+  AFASTADO
+  SUSPENSO
+  DESLIGADO
+}
+
+enum MedidaDisciplinaTipo {
+  ADVERTENCIA
+  SUSPENSAO
+  EXPULSAO
+}
+
+enum MedidaDisciplinaStatus {
+  ATIVA
+  ENCERRADA
+}
+
+enum DoacaoTipo {
+  FINANCEIRA
+  MATERIAL
+}
+
+enum FormaPagamento {
+  DINHEIRO
+  PIX
+  CARTAO
+  OUTRO
+}
+
+enum MovimentacaoTipo {
+  ENTRADA
+  SAIDA
+  AJUSTE
+}
+
+enum PretendenteStatusCurso {
+  EM_CURSO
+  CONCLUIDO
+  TRANCOU
+  DESISTIU
+  REPROVADO
+}
+
+enum PretendenteResultado {
+  APTO_CORRENTE
+  INAPTO_CORRENTE
+  NAO_QUER_CORRENTE_VOLUNTARIADO
+  ACOMPANHAR_MAIS
+}
+
+enum VoluntarioTipo {
+  EX_PRETENDENTE
+  MEDIUM
+  EXTERNO
+}
+
+enum PalestraTipo {
+  INTERNA
+  EXTERNA
+}
+
+enum TemaVisual {
+  VERDE
+  AZUL
+  ROXO
+  CLARO
+}
+
+/**
+ * MODELOS PRINCIPAIS
+ */
+
+/**
+ * MODELO DE CORES
+ */
+model ConfigVisual {
+  id        Int        @id @default(autoincrement())
+  tema      TemaVisual @default(VERDE)
+  updatedAt DateTime   @updatedAt
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  senhaHash String
+  nome      String
+  role      String?
+
+  nivelAcesso NivelAcesso @default(SUPERUSER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // exemplo, se você quiser vincular user ao médium no futuro:
+  // medium       Medium?      @relation(fields: [mediumId], references: [id])
+  // mediumId     Int?
+  medium Medium?
+}
+
+/**
+ * Medium é o centro do sistema
+ */
+
+model Medium {
+  id             Int       @id @default(autoincrement())
+  nome           String
+  codigo         String    @unique
+  dataNascimento DateTime?
+  signo          String?
+  nacionalidade  String?
+  naturalidade   String?
+  escolaridade   String?
+  profissao      String?
+  estadoCivil    String?
+  conjuge        String?
+  filhos         String?
+  filiacao       String?
+  telefone       String?
+  email          String?
+
+  dataEntrada      DateTime?
+  casaAnterior     String?
+  orixasCabeca     String?
+  nomeGuiaChefe    String?
+  guiasPrincipais  Json?
+  padrinhoMadrinha String?
+
+  nivel  MediumNivel  @default(NIVEL_1_INICIANTE)
+  status MediumStatus @default(ATIVO)
+
+  doencas          String?
+  medicacoes       String?
+  alergias         String?
+  observacoesSaude String?
+
+  orientacaoSexual   String?
+  fotoUrl            String?
+  observacoesDirecao String?
+
+  dataDesligamento DateTime?
+
+  // Conexões
+  presencas            Presenca[]
+  iniciacoes           Iniciacao[]
+  medidasDisciplina    MedidaDisciplina[]
+  mensalidades         Mensalidade[]
+  doacoes              Doacao[]
+  emprestimos          EmprestimoLivro[]
+  vendasCantina        VendaCantina[]
+  moncoesAplausos      MoncaoAplausos[]
+  voluntarios          Voluntario[]
+  girasDirigidas       Gira[]                     @relation("GiraDirigente")
+  guiasEspirituais     GuiaEspiritual[]
+  // Palestras
+  palestranteTemas     PalestranteEspecialidade[]
+  palestrasMinistradas Palestra[]                 @relation("PalestrasPorMedium")
+
+  userId Int?  @unique
+  user   User? @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GuiaEspiritual {
+  id          Int               @id @default(autoincrement())
+  nome        String
+  linha       LinhaTrabalhoGuia
+  mediumId    Int?
+  medium      Medium?           @relation(fields: [mediumId], references: [id])
+  ativo       Boolean           @default(true)
+  observacoes String?
+
+  girasChefiadas Gira[] @relation("GiraGuiaChefe")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/**
+ * Giras e presenças
+ */
+
+model Gira {
+  id          Int      @id @default(autoincrement())
+  data        DateTime
+  tipo        String
+  observacoes String?
+
+  dirigenteId Int?
+  dirigente   Medium? @relation("GiraDirigente", fields: [dirigenteId], references: [id])
+
+  guiaChefeId Int?
+  guiaChefe   GuiaEspiritual? @relation("GiraGuiaChefe", fields: [guiaChefeId], references: [id])
+
+  horarioInicio DateTime?
+  horarioFim    DateTime?
+  ata           String?
+
+  ativa Boolean @default(true)
+
+  presencas Presenca[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Presenca {
+  id       Int @id @default(autoincrement())
+  mediumId Int
+  giraId   Int
+
+  status     String // Presente, Falta, Falta Justificada, Afastado
+  observacao String?
+
+  medium Medium @relation(fields: [mediumId], references: [id])
+  gira   Gira   @relation(fields: [giraId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([mediumId, giraId])
+}
+
+/**
+ * Iniciações
+ */
+
+model Iniciacao {
+  id          Int      @id @default(autoincrement())
+  mediumId    Int
+  tipo        String // cruzamento, obrigação, etc.
+  data        DateTime
+  observacoes String?
+
+  medium Medium @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Medidas disciplinares: advertência, suspensão, expulsão
+ */
+
+model MedidaDisciplina {
+  id                    Int                    @id @default(autoincrement())
+  mediumId              Int
+  tipo                  MedidaDisciplinaTipo
+  motivo                String
+  dataCriacao           DateTime               @default(now())
+  dataInicio            DateTime?
+  dataFim               DateTime?
+  status                MedidaDisciplinaStatus @default(ATIVA)
+  geradaAutomaticamente Boolean                @default(false)
+  pdfPath               String? // caminho do PDF gerado
+
+  medium Medium @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Financeiro: mensalidades dos médiuns
+ */
+
+model Mensalidade {
+  id             Int             @id @default(autoincrement())
+  mediumId       Int
+  competencia    String // ex: "2025-01"
+  valor          Decimal         @db.Decimal(10, 2)
+  status         String // Pendente, Pago, Atrasado, Isento
+  dataPagamento  DateTime?
+  formaPagamento FormaPagamento?
+
+  medium Medium @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([mediumId, competencia])
+}
+
+/**
+ * Doações
+ */
+
+model Doacao {
+  id             Int             @id @default(autoincrement())
+  tipo           DoacaoTipo
+  mediumId       Int?
+  doadorExterno  String?
+  valor          Decimal?        @db.Decimal(10, 2)
+  data           DateTime        @default(now())
+  formaPagamento FormaPagamento?
+  observacoes    String?
+
+  medium Medium?      @relation(fields: [mediumId], references: [id])
+  itens  DoacaoItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DoacaoItem {
+  id               Int     @id @default(autoincrement())
+  doacaoId         Int
+  produtoEstoqueId Int
+  quantidade       Decimal @db.Decimal(10, 3)
+
+  doacao         Doacao         @relation(fields: [doacaoId], references: [id])
+  produtoEstoque ProdutoEstoque @relation(fields: [produtoEstoqueId], references: [id])
+}
+
+/**
+ * Estoque
+ */
+
+model ProdutoEstoque {
+  id              Int      @id @default(autoincrement())
+  nome            String
+  categoria       String // consumo ritual, limpeza, cantina, etc.
+  unidade         String // un, L, kg, etc.
+  estoqueMinimo   Decimal? @db.Decimal(10, 3)
+  quantidadeAtual Decimal  @default(0) @db.Decimal(10, 3)
+
+  movimentacoes MovimentacaoEstoque[]
+  itensDoacao   DoacaoItem[]
+  itensCantina  ProdutoCantina[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MovimentacaoEstoque {
+  id               Int              @id @default(autoincrement())
+  produtoEstoqueId Int
+  tipo             MovimentacaoTipo
+  quantidade       Decimal          @db.Decimal(10, 3)
+  data             DateTime         @default(now())
+  origem           String? // doação, compra, gira, cantina, etc.
+  observacao       String?
+
+  produtoEstoque ProdutoEstoque @relation(fields: [produtoEstoqueId], references: [id])
+}
+
+/**
+ * Material Didatico
+ */
+model MaterialDidatico {
+  id        Int                @id @default(autoincrement())
+  titulo    String
+  descricao String?
+  url       String // link direto pro PDF (pode ser /uploads/..., ou https://...)
+  turmaId   Int?
+  turma     TurmaCursoUmbanda? @relation(fields: [turmaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Cantina
+ */
+
+model ProdutoCantina {
+  id    Int     @id @default(autoincrement())
+  nome  String
+  preco Decimal @db.Decimal(10, 2)
+  ativo Boolean @default(true)
+
+  // opcional: vincular a um produto de estoque para consumo automático
+  produtoEstoqueId Int?
+  produtoEstoque   ProdutoEstoque? @relation(fields: [produtoEstoqueId], references: [id])
+
+  itensVenda VendaCantinaItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VendaCantina {
+  id               Int            @id @default(autoincrement())
+  data             DateTime       @default(now())
+  mediumId         Int?
+  compradorExterno String?
+  formaPagamento   FormaPagamento
+  total            Decimal        @db.Decimal(10, 2)
+
+  medium Medium?            @relation(fields: [mediumId], references: [id])
+  itens  VendaCantinaItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VendaCantinaItem {
+  id             Int     @id @default(autoincrement())
+  vendaCantinaId Int
+  produtoId      Int
+  quantidade     Int
+  precoUnitario  Decimal @db.Decimal(10, 2)
+
+  vendaCantina VendaCantina   @relation(fields: [vendaCantinaId], references: [id])
+  produto      ProdutoCantina @relation(fields: [produtoId], references: [id])
+}
+
+/**
+ * Biblioteca
+ */
+
+model Livro {
+  id          Int     @id @default(autoincrement())
+  titulo      String
+  autor       String?
+  editora     String?
+  ano         Int?
+  tema        String?
+  localizacao String?
+
+  exemplares ExemplarLivro[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExemplarLivro {
+  id          Int     @id @default(autoincrement())
+  livroId     Int
+  codigoTombo String  @unique
+  estado      String? // bom, regular, ruim
+
+  livro       Livro             @relation(fields: [livroId], references: [id])
+  emprestimos EmprestimoLivro[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmprestimoLivro {
+  id            Int       @id @default(autoincrement())
+  exemplarId    Int
+  mediumId      Int
+  dataSaida     DateTime
+  dataPrevista  DateTime
+  dataDevolucao DateTime?
+  observacoes   String?
+
+  exemplar ExemplarLivro @relation(fields: [exemplarId], references: [id])
+  medium   Medium        @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Curso de Umbanda - Pretendentes
+ */
+
+model Pretendente {
+  id             Int       @id @default(autoincrement())
+  codigo         String    @unique
+  nome           String
+  dataNascimento DateTime?
+  email          String?
+  telefone       String?
+  escolaridade   String?
+  profissao      String?
+  endereco       String?
+  indicacao      String?
+  observacoes    String?
+
+  matriculas  MatriculaCursoUmbanda[]
+  voluntarios Voluntario[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TurmaCursoUmbanda {
+  id              Int       @id @default(autoincrement())
+  codigo          String    @unique
+  nome            String // ex: Curso 2025.1
+  cursoNome       String // ex: Curso Básico de Umbanda
+  dataInicio      DateTime?
+  dataPrevistaFim DateTime?
+  dataRealFim     DateTime?
+  diaDaSemana     String? // sábado, etc.
+  observacoes     String?
+
+  matriculas MatriculaCursoUmbanda[]
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  materialDidaticos MaterialDidatico[]
+}
+
+model MatriculaCursoUmbanda {
+  id             Int                    @id @default(autoincrement())
+  pretendenteId  Int
+  turmaId        Int
+  dataInicio     DateTime?
+  statusCurso    PretendenteStatusCurso
+  etapaParou     String?
+  observacoes    String?
+  resultadoFinal PretendenteResultado?
+
+  pretendente Pretendente       @relation(fields: [pretendenteId], references: [id])
+  turma       TurmaCursoUmbanda @relation(fields: [turmaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Voluntários
+ */
+
+model Voluntario {
+  id            Int            @id @default(autoincrement())
+  codigo        String         @unique
+  pretendenteId Int?
+  mediumId      Int?
+  tipo          VoluntarioTipo
+  nome          String
+  email         String?
+  telefone      String?
+  ativo         Boolean        @default(true)
+  areasAtuacao  String? // lista simples de áreas, ou tags em JSON depois
+  observacoes   String?
+
+  pretendente Pretendente? @relation(fields: [pretendenteId], references: [id])
+  medium      Medium?      @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Palestrantes
+ */
+
+model PalestranteEspecialidade {
+  id              Int       @id @default(autoincrement())
+  mediumId        Int
+  tema            String // ex: Linha de Pretos-Velhos, Conduta Mediúnica
+  nivel           Int // 1 interno, 2 interno + infantil, 3 externo
+  observacoes     String?
+  dataAutorizacao DateTime?
+  autorizadoPor   String?
+
+  medium Medium @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Palestra {
+  id          Int          @id @default(autoincrement())
+  mediumId    Int
+  tema        String
+  tipo        PalestraTipo
+  local       String?
+  data        DateTime
+  observacoes String?
+
+  palestrante Medium @relation("PalestrasPorMedium", fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * Monção de Aplausos
+ */
+
+model MoncaoAplausos {
+  id                  Int      @id @default(autoincrement())
+  mediumId            Int?
+  nomeHomenageado     String
+  tipoHomenageado     String // médium, voluntário, externo
+  motivo              String
+  data                DateTime
+  dirigenteAssinatura String?
+  pdfPath             String?
+
+  medium Medium? @relation(fields: [mediumId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

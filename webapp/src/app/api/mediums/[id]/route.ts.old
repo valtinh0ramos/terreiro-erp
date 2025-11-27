@@ -1,0 +1,104 @@
+// src/app/api/mediums/[id]/route.ts
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
+type RouteParams = {
+  params: { id: string }
+}
+
+export async function GET(_req: Request, { params }: RouteParams) {
+  const id = Number(params.id)
+  if (Number.isNaN(id)) {
+    return NextResponse.json({ error: 'ID inválido.' }, { status: 400 })
+  }
+
+  try {
+    const medium = await prisma.medium.findUnique({
+      where: { id },
+    })
+
+    if (!medium) {
+      return NextResponse.json(
+        { error: 'Médium não encontrado.' },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json(medium)
+  } catch (error) {
+    console.error('Erro ao buscar médium:', error)
+    return NextResponse.json(
+      { error: 'Erro ao buscar médium.' },
+      { status: 500 },
+    )
+  }
+}
+
+export async function PATCH(request: Request, { params }: RouteParams) {
+  const id = Number(params.id)
+  if (Number.isNaN(id)) {
+    return NextResponse.json({ error: 'ID inválido.' }, { status: 400 })
+  }
+
+  try {
+    const body = await request.json()
+
+    const {
+      nome,
+      dataNascimento,
+      email,
+      telefone,
+      nivel,
+      status,
+      dataEntrada,
+      casaAnterior,
+      orixasCabeca,
+      nomeGuiaChefe,
+    } = body
+
+    const medium = await prisma.medium.update({
+      where: { id },
+      data: {
+        nome,
+        email,
+        telefone,
+        nivel,
+        status,
+        dataNascimento: dataNascimento ? new Date(dataNascimento) : undefined,
+        dataEntrada: dataEntrada ? new Date(dataEntrada) : undefined,
+        casaAnterior,
+        orixasCabeca,
+        nomeGuiaChefe,
+      },
+    })
+
+    return NextResponse.json(medium)
+  } catch (error) {
+    console.error('Erro ao atualizar médium:', error)
+    return NextResponse.json(
+      { error: 'Erro ao atualizar médium.' },
+      { status: 500 },
+    )
+  }
+}
+
+export async function DELETE(_req: Request, { params }: RouteParams) {
+  const id = Number(params.id)
+  if (Number.isNaN(id)) {
+    return NextResponse.json({ error: 'ID inválido.' }, { status: 400 })
+  }
+
+  try {
+    await prisma.medium.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Erro ao excluir médium:', error)
+    return NextResponse.json(
+      { error: 'Erro ao excluir médium.' },
+      { status: 500 },
+    )
+  }
+}
