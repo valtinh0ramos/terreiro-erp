@@ -57,6 +57,26 @@ function formatDate(date: string | null) {
 }
 
 export default function FinanceiroPage() {
+  
+    // 🔹 Estado para o resumo financeiro geral
+  const [resumo, setResumo] = useState<{ receitas: { mensalidades: number; doacoes: number }; despesas: number; saldo: number } | null>(null);
+
+  // 🔹 Carregar o resumo financeiro geral (mensalidades + doações - despesas)
+  async function carregarResumoFinanceiro() {
+    try {
+      const res = await fetch("/api/financeiro/resumo");
+      const data = await res.json();
+      setResumo(data);
+    } catch (error) {
+      console.error("Erro ao carregar resumo financeiro:", error);
+    }
+  }
+
+  useEffect(() => {
+    carregarResumoFinanceiro();
+  }, []);
+
+
   const [mediums, setMediums] = useState<Medium[]>([])
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([])
   const [competencia, setCompetencia] = useState<string>(() => {
@@ -177,6 +197,39 @@ export default function FinanceiroPage() {
           pagamentos, status e forma de pagamento.
         </p>
       </div>
+
+	      {/* 🔹 Resumo Financeiro Geral */}
+      {resumo && (
+        <div className="grid gap-4 md:grid-cols-3 mt-4">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-center">
+            <p className="text-xs text-slate-400">Total arrecadado (Mensalidades + Doações)</p>
+            <p className="text-2xl font-semibold text-emerald-400 mt-1">
+              R$ {(resumo.receitas.mensalidades + resumo.receitas.doacoes)
+                .toFixed(2)
+                .replace(".", ",")}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-center">
+            <p className="text-xs text-slate-400">Total de Despesas</p>
+            <p className="text-2xl font-semibold text-red-400 mt-1">
+              R$ {resumo.despesas.toFixed(2).replace(".", ",")}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 text-center">
+            <p className="text-xs text-slate-400">Saldo Final</p>
+            <p
+              className={`text-2xl font-semibold mt-1 ${
+                resumo.saldo >= 0 ? "text-emerald-500" : "text-red-500"
+              }`}
+            >
+              R$ {resumo.saldo.toFixed(2).replace(".", ",")}
+            </p>
+          </div>
+        </div>
+      )}
+
 
       {/* Filtro de competência + cards resumo */}
       <div className="grid gap-4 md:grid-cols-[220px,1fr]">
@@ -435,4 +488,3 @@ export default function FinanceiroPage() {
     </div>
   )
 }
-
