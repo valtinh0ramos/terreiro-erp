@@ -370,6 +370,19 @@ model DoacaoItem {
   produtoEstoque ProdutoEstoque @relation(fields: [produtoEstoqueId], references: [id])
 }
 
+model Despesa {
+  id             Int       @id @default(autoincrement())
+  descricao      String
+  categoria      String?
+  valor          Decimal   @db.Decimal(10, 2)
+  data           DateTime  @default(now())
+  formaPagamento String?
+  observacoes    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 /**
  * Estoque
  */
@@ -469,17 +482,19 @@ model VendaCantinaItem {
 
 model Livro {
   id          Int     @id @default(autoincrement())
+  codigo      String  @unique
   titulo      String
   autor       String?
   editora     String?
   ano         Int?
   tema        String?
+  genero      String?
   localizacao String?
+  sinopse     String?
 
   exemplares ExemplarLivro[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model ExemplarLivro {

@@ -31,43 +31,60 @@ export default async function ErpHomePage() {
     voluntariosCount,
     turmasCount,
     girasMes,
-  ] = await Promise.all([
-    prisma.medium.findMany({
-      select: {
-        id: true,
-        nivel: true,
-        status: true,
-      },
-    }),
-    prisma.presenca.findMany(),
-    prisma.mensalidade.findMany({
-      where: { competencia: competenciaAtual },
-    }),
-    prisma.doacao.findMany({
-      where: { tipo: 'FINANCEIRA' },
-    }),
-    prisma.medium.count(),
-    prisma.medium.count({ where: { status: 'ATIVO' } }),
-    prisma.medium.count({ where: { status: 'SUSPENSO' } }),
-    prisma.medium.count({ where: { status: 'DESLIGADO' } }),
-    prisma.gira.count(),
-    prisma.medidaDisciplina.findMany(),
-    prisma.produtoEstoque.findMany(),
-    prisma.pretendente.count(),
-    prisma.voluntario.count(),
-    prisma.turmaCursoUmbanda.count(),
-    prisma.gira.findMany({
-      where: {
-        ativa: true,
-        data: {
-          gte: startOfMonth,
-          lt: startOfNextMonth,
-        },
-      },
-      orderBy: { data: 'asc' },
-    }),
-  ])
+  
+    livrosEmprestados,
+    livrosDevolvidos,
+    livrosAtrasados,
+    livrosPopulares,
+] = await Promise.all([
+  prisma.medium.findMany({ select: { id: true, nivel: true, status: true } }),
+  prisma.presenca.findMany(),
+  prisma.mensalidade.findMany({ where: { competencia: competenciaAtual } }),
+  prisma.doacao.findMany({ where: { tipo: "FINANCEIRA" } }),
+  prisma.medium.count(),
+  prisma.medium.count({ where: { status: "ATIVO" } }),
+  prisma.medium.count({ where: { status: "SUSPENSO" } }),
+  prisma.medium.count({ where: { status: "DESLIGADO" } }),
+  prisma.gira.count(),
+  prisma.medidaDisciplina.findMany(),
+  prisma.produtoEstoque.findMany(),
+  prisma.pretendente.count(),
+  prisma.voluntario.count(),
+  prisma.turmaCursoUmbanda.count(),
+  prisma.gira.findMany({
+    where: {
+      ativa: true,
+      data: { gte: startOfMonth, lt: startOfNextMonth },
+    },
+    orderBy: { data: "asc" },
+  }),
 
+
+  prisma.emprestimoLivro.count({ where: { dataDevolucao: null } }),
+  prisma.emprestimoLivro.count({ where: { dataDevolucao: { not: null } } }),
+  prisma.emprestimoLivro.count({
+    where: { dataDevolucao: null, dataPrevista: { lt: new Date() } },
+  }),
+
+  prisma.livro.findMany({
+  take: 5,
+  orderBy: {
+    exemplares: {
+      _count: "desc",
+    },
+  },
+  select: {
+    id: true,
+    titulo: true,
+    _count: {
+      select: {
+        exemplares: true,
+      },
+    },
+  },
+}),
+
+]) 
   // Presenças
   const presencasConsideradas = presencas.filter(
     (p) => p.status !== 'AFASTADO',
@@ -431,6 +448,58 @@ export default async function ErpHomePage() {
           <p className="mt-1 text-[11px] text-slate-400">
             Consulte o módulo &quot;Doações&quot; para detalhes.
           </p>
+        </div>
+      </div>
+
+
+{/* Linha 3.5: Biblioteca */}
+      <div className="grid gap-4 lg:grid-cols-1">
+        <div className={cardClass}>
+          <h2 className="text-sm font-semibold text-slate-900 mb-2">
+            Biblioteca – Estatísticas Gerais
+          </h2>
+
+          <div className="grid grid-cols-3 gap-4 text-center text-xs text-slate-600">
+            <div>
+              <p className="text-2xl font-bold text-emerald-600">
+                {livrosEmprestados ?? 0}
+              </p>
+              <p className="mt-1 text-slate-500">Livros emprestados</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-sky-600">
+                {livrosDevolvidos ?? 0}
+              </p>
+              <p className="mt-1 text-slate-500">Livros devolvidos</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-600">
+                {livrosAtrasados ?? 0}
+              </p>
+              <p className="mt-1 text-slate-500">Livros atrasados</p>
+            </div>
+          </div>
+
+          {livrosPopulares && livrosPopulares.length > 0 && (
+            <div className="mt-6 border-t border-slate-200 pt-3">
+              <h3 className="text-xs text-slate-500 uppercase mb-2 tracking-wide">
+                Livros mais emprestados
+              </h3>
+              <ul className="text-sm text-slate-700 space-y-1">
+                {livrosPopulares.map((l) => (
+                  <li
+                    key={l.id}
+                    className="flex justify-between border-b border-slate-100 last:border-0 py-1"
+                  >
+                    <span className="truncate max-w-[180px]">{l.titulo}</span>
+                    <span className="text-slate-400 text-[11px]">
+                      {l._count.emprestimos}x
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 

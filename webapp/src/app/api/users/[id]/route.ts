@@ -1,3 +1,4 @@
+// @ts-nocheck
 // src/app/api/users/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'

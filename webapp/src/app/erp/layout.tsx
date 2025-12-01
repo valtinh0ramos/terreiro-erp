@@ -237,17 +237,51 @@ export default async function ErpLayout({ children }: Props) {
               </li>
             )}
 
-            {/* FINANCEIRO */}
-            {isAvancado && (
-              <li>
-                <a
-                  href="/erp/financeiro"
-                  className={`block rounded-md px-3 py-2 ${t.navText} ${t.navHoverBg} ${t.navHoverText} transition`}
-                >
-                  Financeiro
-                </a>
-              </li>
-            )}
+	   {/* FINANCEIRO */}
+{isAvancado && (
+  <li className="mt-1">
+    <details
+      className={`group rounded-md border ${t.sidebarBorder} ${t.sidebarBg}`}
+    >
+      <summary
+        className={`flex items-center justify-between cursor-pointer px-3 py-2 ${t.navText} ${t.navHoverBg} ${t.navHoverText} list-none`}
+      >
+        <span className="text-sm font-medium">Financeiro</span>
+        <span className="text-xs font-mono text-slate-500 group-open:hidden">
+          + aparecer
+        </span>
+        <span className="text-xs font-mono text-slate-500 hidden group-open:inline">
+          - esconder
+        </span>
+      </summary>
+
+      <div className="border-t border-[#E5E5E5]/60 py-1">
+        {/* Página principal do Financeiro */}
+        <a
+          href="/erp/financeiro"
+          className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-[#EBEBEC] hover:text-slate-900"
+        >
+          Visão Geral
+        </a>
+
+        {/*  Novo submenu: Doações */}
+        <a
+          href="/erp/financeiro/doacoes"
+          className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-[#EBEBEC] hover:text-slate-900"
+        >
+          Doações Financeiras
+        </a>
+	<a
+  	href="/erp/financeiro/despesas"
+  	className="block px-4 py-1.5 text-xs text-slate-700 hover:bg-[#EBEBEC] hover:text-slate-900"
+	>
+  	Despesas
+	</a>
+        {/* Futuro: outras opções podem ser adicionadas aqui */}
+      </div>
+    </details>
+  </li>
+)}
 
             {/* ESTOQUE */}
             {isAvancado && (

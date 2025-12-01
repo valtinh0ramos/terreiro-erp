@@ -1,0 +1,23 @@
+
+> webapp@0.1.0 dev
+> next dev
+
+   ▲ Next.js 16.0.4 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://207.180.207.106:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 5.9s
+ ○ Compiling /login ...
+ GET /login 200 in 10.3s (compile: 10.0s, render: 310ms)
+ ⚠ Cross origin request detected from 207.180.207.106 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ POST /api/auth/login 401 in 2.3s (compile: 1004ms, render: 1329ms)
+ POST /api/auth/login 200 in 41ms (compile: 7ms, render: 34ms)
+ GET /erp 200 in 2.3s (compile: 982ms, render: 1273ms)
+ GET /.env 404 in 795ms (compile: 677ms, render: 118ms)
+ GET /.git/config 404 in 74ms (compile: 7ms, render: 67ms)
+ GET /erp/painel-controle 200 in 1224ms (compile: 1007ms, render: 217ms)
+ GET /api/users 200 in 301ms (compile: 214ms, render: 87ms)
+ GET /api/config-visual 200 in 307ms (compile: 266ms, render: 42ms)
