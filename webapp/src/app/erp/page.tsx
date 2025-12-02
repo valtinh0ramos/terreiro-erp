@@ -84,9 +84,34 @@ export default async function ErpHomePage() {
   },
 }),
 
-]) 
-  // Presenças
-  const presencasConsideradas = presencas.filter(
+])
+
+
+// 🧾 Mensalidades pagas
+const mensalidades = await prisma.mensalidade.aggregate({
+  _sum: { valor: true },
+  where: { status: "Pago" },
+});
+
+// 💰 Doações financeiras
+const doacoes = await prisma.doacao.aggregate({
+  _sum: { valor: true },
+  where: { tipo: "FINANCEIRA" },
+});
+
+// 💸 Despesas
+const despesas = await prisma.despesa.aggregate({
+  _sum: { valor: true },
+});
+
+// 🧮 Cálculos
+const totalMensalidades = Number(mensalidades._sum.valor || 0);
+const totalDoacoes = Number(doacoes._sum.valor || 0);
+const totalDespesas = Number(despesas._sum.valor || 0);
+const saldoFinanceiro = totalMensalidades + totalDoacoes - totalDespesas;
+
+
+const presencasConsideradas = presencas.filter(
     (p) => p.status !== 'AFASTADO',
   )
   const totalSessoesConsideradas = presencasConsideradas.length
@@ -115,7 +140,6 @@ export default async function ErpHomePage() {
   )
 
   const totalReceitas = receitaMensalidadesMes + receitaDoacoesFinanceiras
-  const totalDespesas = 0
   const totalDoadoFinanceiro = receitaDoacoesFinanceiras
 
   // Níveis de médium
@@ -450,6 +474,25 @@ export default async function ErpHomePage() {
           </p>
         </div>
       </div>
+
+	{/* Saldo Financeiro Consolidado */}
+<div className={cardClass}>
+  <h2 className="text-sm font-semibold text-slate-900 mb-2">
+    Saldo Financeiro
+  </h2>
+  <p
+    className={`text-3xl font-semibold ${
+      saldoFinanceiro >= 0 ? "text-emerald-600" : "text-red-600"
+    }`}
+  >
+    {formatCurrency(saldoFinanceiro)}
+  </p>
+  <p className="mt-2 text-xs text-slate-500">
+    (Receitas: {formatCurrency(totalMensalidades + totalDoacoes)} —{" "}
+    Despesas: {formatCurrency(totalDespesas)})
+  </p>
+</div>
+
 
 
 {/* Linha 3.5: Biblioteca */}
